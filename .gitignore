@@ -1,10 +1,29 @@
+# Backend C++ build
 backend/build/
 backend/vcpkg_installed/
 *.exe
 *.obj
 *.pdb
+*.ilk
+*.exp
+*.lib
+
+# Base de datos SQLite
 *.db
-.vs/
-.vscode/
+*.db-shm
+*.db-wal
+
+# Frontend ASP.NET
 frontend/obj/
 frontend/bin/
+frontend/packages/
+*.user
+
+# IDE
+.vs/
+.vscode/
+CMakeSettings.json
+
+# OS
+Thumbs.db
+desktop.ini
