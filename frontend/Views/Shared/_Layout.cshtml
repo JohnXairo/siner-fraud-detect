@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sinergy — Motor de Detección de Fraude</title>
+    <link rel="stylesheet" href="@Url.Content("~/Content/site.css")" />
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <div class="brand">
+                <span class="brand-icon">⬡</span>
+                <span class="brand-name">Sinergy</span>
+                <span class="brand-sub">Fraud Detection</span>
+            </div>
+            <div class="header-status" id="engineStatus">
+                <span class="dot dot-checking"></span> Verificando motor...
+            </div>
+        </div>
+    </header>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer>
+        <span>Sinergy Fraud Detection Engine v1.0 &mdash; Demo OpenTelemetry</span>
+    </footer>
+
+    <script src="@Url.Content("~/Scripts/dashboard.js")"></script>
+</body>
+</html>

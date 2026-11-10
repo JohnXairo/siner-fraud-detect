@@ -1,0 +1,165 @@
+@model FraudDashboard.Models.DashboardViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Dashboard";
+}
+
+@if (TempData["Error"] != null) {
+    <div class="alert-error">@TempData["Error"]</div>
+}
+
+<!-- KPIs ------------------------------------------------------------------- -->
+<section class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-value">@Model.Stats.TotalTransactions</div>
+        <div class="kpi-label">Transacciones</div>
+    </div>
+    <div class="kpi-card kpi-green">
+        <div class="kpi-value">@Model.Stats.Approved</div>
+        <div class="kpi-label">Aprobadas</div>
+    </div>
+    <div class="kpi-card kpi-yellow">
+        <div class="kpi-value">@Model.Stats.Flagged</div>
+        <div class="kpi-label">En Revisión</div>
+    </div>
+    <div class="kpi-card kpi-red">
+        <div class="kpi-value">@Model.Stats.Blocked</div>
+        <div class="kpi-label">Bloqueadas</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-value">@Model.Stats.AvgRiskScore.ToString("F1")</div>
+        <div class="kpi-label">Risk Score Promedio</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-value">$@String.Format("{0:N0}", Model.Stats.TotalAmount)</div>
+        <div class="kpi-label">Volumen Total</div>
+    </div>
+</section>
+
+<div class="main-grid">
+
+    <!-- Simulador de transacción ------------------------------------------- -->
+    <section class="card">
+        <h2>Simular Transacción</h2>
+        @using (Html.BeginForm("Submit", "Dashboard", FormMethod.Post, new { id = "txnForm" })) {
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Cuenta</label>
+                    <input type="text" name="account_id" value="ACC-@(new Random().Next(1000,9999))" required />
+                </div>
+                <div class="form-group">
+                    <label>Monto (USD)</label>
+                    <input type="number" name="amount" min="1" step="0.01" value="500" required />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>País</label>
+                    <select name="country">
+                        <option value="US">🇺🇸 Estados Unidos</option>
+                        <option value="MX">🇲🇽 México</option>
+                        <option value="CO">🇨🇴 Colombia</option>
+                        <option value="BR">🇧🇷 Brasil</option>
+                        <option value="AR">🇦🇷 Argentina</option>
+                        <option value="NG">🇳🇬 Nigeria 🔴</option>
+                        <option value="RU">🇷🇺 Rusia 🔴</option>
+                        <option value="KP">🇰🇵 Corea del Norte 🔴</option>
+                        <option value="VE">🇻🇪 Venezuela ⚠</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Moneda</label>
+                    <select name="currency">
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="MXN">MXN</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row presets">
+                <span class="preset-label">Escenarios rápidos:</span>
+                <button type="button" class="btn-preset" onclick="setPreset(500,'US')">✓ Normal</button>
+                <button type="button" class="btn-preset btn-yellow" onclick="setPreset(12000,'MX')">⚠ Alto monto</button>
+                <button type="button" class="btn-preset btn-red" onclick="setPreset(75000,'NG')">✗ Fraude</button>
+            </div>
+            <button type="submit" class="btn-submit">Analizar Transacción →</button>
+        }
+    </section>
+
+    <!-- Alertas recientes -------------------------------------------------- -->
+    <section class="card">
+        <h2>Alertas Recientes <span class="badge badge-red">@Model.Alerts.Count</span></h2>
+        @if (!Model.Alerts.Any()) {
+            <p class="empty-msg">Sin alertas. Las transacciones sospechosas aparecen aquí.</p>
+        } else {
+            <div class="alert-list">
+                @foreach (var a in Model.Alerts.Take(8)) {
+                    <div class="alert-item">
+                        <div class="alert-rule">@a.RuleTriggered</div>
+                        <div class="alert-desc">@a.Description</div>
+                        <div class="alert-meta">
+                            <span class="risk-badge" style="background:@RiskColor(a.RiskScore)">
+                                Score: @a.RiskScore.ToString("F0")
+                            </span>
+                            <span class="alert-time">@a.Timestamp</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+</div>
+
+<!-- Historial de transacciones -------------------------------------------- -->
+<section class="card full-width">
+    <div class="table-header">
+        <h2>Historial de Transacciones</h2>
+        <button class="btn-refresh" onclick="location.reload()">↻ Actualizar</button>
+    </div>
+    @if (!Model.Transactions.Any()) {
+        <p class="empty-msg">Sin transacciones. Usa el simulador para generar datos.</p>
+    } else {
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cuenta</th>
+                        <th>Monto</th>
+                        <th>País</th>
+                        <th>Risk Score</th>
+                        <th>Estado</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Transactions) {
+                        <tr>
+                            <td class="mono">@t.Id.Substring(0, 8)…</td>
+                            <td>@t.AccountId</td>
+                            <td class="amount">$@String.Format("{0:N2}", t.Amount) @t.Currency</td>
+                            <td>@t.Country</td>
+                            <td>
+                                <div class="risk-bar-wrap">
+                                    <div class="risk-bar" style="width:@((int)t.RiskScore)%;background:@RiskColor(t.RiskScore)"></div>
+                                    <span>@t.RiskScore.ToString("F0")</span>
+                                </div>
+                            </td>
+                            <td><span class="status-pill @t.StatusClass">@t.StatusLabel</span></td>
+                            <td class="mono small">@t.Timestamp</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@functions {
+    string RiskColor(double score) {
+        if (score >= 70) return "#dc2626";
+        if (score >= 30) return "#d97706";
+        return "#16a34a";
+    }
+}
