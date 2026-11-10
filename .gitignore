@@ -1,0 +1,10 @@
+backend/build/
+backend/vcpkg_installed/
+*.exe
+*.obj
+*.pdb
+*.db
+.vs/
+.vscode/
+frontend/obj/
+frontend/bin/
