@@ -18,6 +18,14 @@ add_executable(fraud-engine ${SOURCES})
 
 target_include_directories(fraud-engine PRIVATE src third_party)
 
+# WIN32_LEAN_AND_MEAN evita conflicto entre winsock.h y winsock2.h
+# NOMINMAX evita conflicto de min/max macros con std::
+target_compile_definitions(fraud-engine PRIVATE
+    WIN32_LEAN_AND_MEAN
+    NOMINMAX
+    _WIN32_WINNT=0x0602
+)
+
 target_link_libraries(fraud-engine PRIVATE
     unofficial::sqlite3::sqlite3
     nlohmann_json::nlohmann_json

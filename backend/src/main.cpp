@@ -1,10 +1,18 @@
+// WIN32_LEAN_AND_MEAN evita que <windows.h> incluya <winsock.h> v1,
+// que entra en conflicto con <winsock2.h> que usa httplib.h.
+// Debe definirse ANTES de cualquier include de Windows.
+#define WIN32_LEAN_AND_MEAN
+
+// httplib.h debe incluirse ANTES de <windows.h> para que maneje
+// correctamente el orden de winsock2.
+#include "httplib.h"
+
 #include <iostream>
 #include <string>
 #include <thread>
 #include <atomic>
 #include <windows.h>
 
-#include "httplib.h"
 #include "db.h"
 #include "routes/transaction_handler.h"
 #include "routes/alerts_handler.h"
