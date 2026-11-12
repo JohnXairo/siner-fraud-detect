@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Web.Configuration;
 using System.Web.Mvc;
 using FraudDashboard.Models;
 using Newtonsoft.Json;
@@ -13,7 +13,7 @@ namespace FraudDashboard.Controllers {
     public class DashboardController : Controller {
 
         private static readonly string BackendUrl =
-            ConfigurationManager.AppSettings["FraudEngineUrl"] ?? "http://localhost:8081";
+            WebConfigurationManager.AppSettings["FraudEngineUrl"] ?? "http://localhost:8081";
 
         private static readonly HttpClient Http = new HttpClient {
             Timeout = TimeSpan.FromSeconds(10)
@@ -34,22 +34,22 @@ namespace FraudDashboard.Controllers {
             return View(vm);
         }
 
-        // POST /Dashboard/Submit — recibe el formulario de simulación
+        // POST /Dashboard/Submit
         [HttpPost]
         public async Task<ActionResult> Submit(string account_id, double amount,
                                                string country, string currency) {
             var payload = new {
-                account_id,
-                amount,
-                country  = country ?? "US",
-                currency = currency ?? "USD"
+                account_id = account_id,
+                amount     = amount,
+                country    = country  ?? "US",
+                currency   = currency ?? "USD"
             };
             var content = new StringContent(
                 JsonConvert.SerializeObject(payload),
                 System.Text.Encoding.UTF8, "application/json");
 
             try {
-                var resp = await Http.PostAsync($"{BackendUrl}/api/transaction", content);
+                var resp = await Http.PostAsync(BackendUrl + "/api/transaction", content);
                 resp.EnsureSuccessStatusCode();
             } catch (Exception ex) {
                 TempData["Error"] = "Error al enviar transacción: " + ex.Message;
@@ -58,10 +58,9 @@ namespace FraudDashboard.Controllers {
             return RedirectToAction("Index");
         }
 
-        // Helpers privados
         private async Task<Stats> GetStats() {
             try {
-                var json = await Http.GetStringAsync($"{BackendUrl}/api/stats");
+                var json = await Http.GetStringAsync(BackendUrl + "/api/stats");
                 var raw  = JsonConvert.DeserializeAnonymousType(json, new {
                     total_transactions = 0, approved = 0, flagged = 0, blocked = 0,
                     avg_risk_score = 0.0, total_amount = 0.0
@@ -79,16 +78,21 @@ namespace FraudDashboard.Controllers {
 
         private async Task<List<Transaction>> GetTransactions() {
             try {
-                var json = await Http.GetStringAsync($"{BackendUrl}/api/transactions");
+                var json = await Http.GetStringAsync(BackendUrl + "/api/transactions");
                 var raw  = JsonConvert.DeserializeAnonymousType(json,
-                    new[] { new { id="", account_id="", amount=0.0, country="",
-                                  currency="", timestamp="", risk_score=0.0, status="" }});
+                    new[] { new { id = "", account_id = "", amount = 0.0, country = "",
+                                  currency = "", timestamp = "", risk_score = 0.0, status = "" } });
                 var list = new List<Transaction>();
                 foreach (var r in raw)
                     list.Add(new Transaction {
-                        Id = r.id, AccountId = r.account_id, Amount = r.amount,
-                        Country = r.country, Currency = r.currency,
-                        Timestamp = r.timestamp, RiskScore = r.risk_score, Status = r.status
+                        Id        = r.id,
+                        AccountId = r.account_id,
+                        Amount    = r.amount,
+                        Country   = r.country,
+                        Currency  = r.currency,
+                        Timestamp = r.timestamp,
+                        RiskScore = r.risk_score,
+                        Status    = r.status
                     });
                 return list;
             } catch { return new List<Transaction>(); }
@@ -96,16 +100,19 @@ namespace FraudDashboard.Controllers {
 
         private async Task<List<Alert>> GetAlerts() {
             try {
-                var json = await Http.GetStringAsync($"{BackendUrl}/api/alerts");
+                var json = await Http.GetStringAsync(BackendUrl + "/api/alerts");
                 var raw  = JsonConvert.DeserializeAnonymousType(json,
-                    new[] { new { id="", transaction_id="", rule_triggered="",
-                                  description="", timestamp="", risk_score=0.0 }});
+                    new[] { new { id = "", transaction_id = "", rule_triggered = "",
+                                  description = "", timestamp = "", risk_score = 0.0 } });
                 var list = new List<Alert>();
                 foreach (var r in raw)
                     list.Add(new Alert {
-                        Id = r.id, TransactionId = r.transaction_id,
-                        RuleTriggered = r.rule_triggered, Description = r.description,
-                        Timestamp = r.timestamp, RiskScore = r.risk_score
+                        Id            = r.id,
+                        TransactionId = r.transaction_id,
+                        RuleTriggered = r.rule_triggered,
+                        Description   = r.description,
+                        Timestamp     = r.timestamp,
+                        RiskScore     = r.risk_score
                     });
                 return list;
             } catch { return new List<Alert>(); }
